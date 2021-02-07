@@ -1,0 +1,164 @@
+---
+title: "Prediction Using Supervised ML"
+author: Article by Saikat Kar
+
+output: 
+  html_document:
+    toc : true
+    toc_float : true
+    theme: cerulean
+---
+
+
+
+What is Supervised Learning?
+
+Supervised learning is an important aspect of Data Science. Supervised learning is the machine learning task of inferring a function from labelled training data. The training data consists of a set of training examples. In supervised learning, each example is a pair consisting of an input object (typically a vector) and a desired output value (also called the supervisory signal).
+With the help of historical data, random sampling is carried out. Random sampling picks 70% and 30% of records. With 70%, the machine learning gets trained with the data.  It is important to make sure the data is generalized and is not a specified one. Once the system is trained, it will provide a model (statistical model) which means that certain understanding has been attained from the data along with some formulas. Calculations will be the output of the modelling.
+For instance, the brain has to be evaluated to check its functioning. Thirty per cent of the data has an input and output but when you give that to the model it will take only the independent variable and it calculates, giving the output. Hence, the model will give an output and you’re going to compare the brain predicted output and the actual value. Hence, the accuracy of percentage will be attained.
+
+What is Linear Regression?
+
+Linear regression attempts to model the relationship between two variables by fitting a linear equation (= a straight line) to the observed data. If you have a hunch that the data follows a straight line trend, linear regression can give you quick and reasonably accurate results.
+
+
+Importing necessary libraries
+```{r library,warning=FALSE,message=FALSE}
+library(ggplot2)
+library(psych)
+library(highcharter)
+library(plotly)
+```
+
+1.Import and Overview of data
+```{r}
+#Read the file
+link = "http://bit.ly/w-data"
+df <- read.csv(link)
+attach(df)
+head(df)
+```
+
+2.Exploratory Data Analysis
+```{r}
+dim(df)
+```
+
+Summary of variables
+```{r}
+str(df)
+summary(df)
+```
+
+Interactive Plots
+```{r setup,warning=FALSE,message=FALSE}
+hcboxplot(Scores,color = "red")
+```
+
+
+```{r}
+describe(df)
+```
+Using describe() function, we can get extra info than summary() function such as 10%trimmed mean,Mean deviation about median, kurtosis 
+
+No of non null values
+```{r}
+colSums(is.na(df))
+```
+
+This proves that there is no missing values and no need of data cleaning. 
+
+3.Data Visualisation
+
+
+Scatter Plots
+```{r}
+p <- ggplot(df,aes(x=Hours,y=Scores)) + geom_point(color= "red",shape=1) +
+  labs(title = "Plot of Scores of students and \n No of Hours studied") +
+  xlab("Hours Studied") + ylab("Percentage Score")
+ggplotly(p)
+```
+
+Adding more customs to plot
+```{r}
+q <- p + aes(size=Hours)
+ggplotly(q)
+
+```
+
+
+From this we can see that there is a strong positive linear association between scores and hours studied.
+
+We want to know how much strong this relationship
+```{r}
+cor(Hours,Scores)
+```
+
+So, we can apply linear regression on this dataset.
+
+Split Dataset into "training" (70%) and validation(30%)
+```{r}
+set.seed(2561)
+ind <- sample(2,nrow(df),replace = TRUE,prob = c(0.7,0.3))
+traindf <- df[ind==1,]
+testdf <-  df[ind==2,]
+head(traindf)
+head(testdf)
+```
+
+Linear Regression Model
+```{r}
+results <- lm(Scores~Hours,traindf)
+summary(results)
+traindf$pred <- predict(results,traindf)
+head(traindf[])
+```
+
+Performance of this model on test data
+```{r}
+testdf$pred <- predict(results,testdf)
+testdf
+```
+
+Using this model,we can see that the model is fitting very well on test data.
+Now, we fitting the regression line through previos scatterplot. 
+
+```{r}
+s <- p + geom_smooth(method = "lm")
+ggplotly(s)
+```
+
+
+Here we can check our model parameters are true upto how much level of significance. For that we have to find 95% level of significance confidence intervals of coefficients and intercepts.
+
+```{r}
+beta <- summary(results)$coefficients[,1]
+se.beta <- summary(results)$coefficients[,2]
+t95 <- qt(0.975, results$df.residual)
+ci.beta <- cbind(beta-t95*se.beta, beta+t95*se.beta)
+ci.beta
+```
+Now, our model coefficients and intercepts are as follows:
+
+```{r}
+intercept <- coef(summary(results))["(Intercept)", "Estimate"]
+Hours <- coef(summary(results))["Hours" , "Estimate"]
+intercept
+Hours
+```
+
+So, as our predicted model's coefficient and intercept are within in confidence intervals, thus this predicted values are atleast 95% significant.
+
+
+Now, we have to predict of score if a student studies 9.25 hrs/day
+```{r}
+intercept + Hours*9.25
+```
+Finally, we can comment that Our model predict Score of a student provided no of hours with 95.84% accurate results.
+
+Comment: If a student studies 9.25 hrs/day, from the given Dataset we can predict that the student is expected to score 93.10 percentage(approx)
+
+Thank You!!
+
+
+
